@@ -103,5 +103,7 @@ e chamada para ação.
                 mime="text/plain"
             )
 
+        
         except Exception as erro:
-    st.error(f"Erro ao gerar conteúdo: {erro}")
+            st.error(f"Erro ao gerar conteúdo: {erro}")
+
