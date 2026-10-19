@@ -103,8 +103,5 @@ e chamada para ação.
                 mime="text/plain"
             )
 
-        except Exception:
-            st.error(
-                "Não foi possível gerar o conteúdo. "
-                "Confira a chave da API e tente novamente."
-            )
+        except Exception as erro:
+    st.error(f"Erro ao gerar conteúdo: {erro}")
