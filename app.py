@@ -8,20 +8,88 @@ st.set_page_config(
     layout="centered"
 )
 
+
 st.markdown("""
 <style>
 .stApp {
-    background-color: #101010;
+    background:
+        radial-gradient(ellipse at top right,
+        rgba(150, 0, 20, 0.16), transparent 45%),
+        #090a0e;
+    color: #f5f5f7;
+}
+
+.block-container {
+    max-width: 1150px;
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+}
+
+h1 {
+    font-size: 2.7rem !important;
+    font-weight: 800 !important;
+    letter-spacing: -1.5px;
+    color: #ffffff !important;
+}
+
+h2, h3 {
+    color: #ffffff !important;
+}
+
+p, label, .stMarkdown {
+    color: #d1d5df;
+}
+
+.stTextInput input,
+.stTextArea textarea,
+.stSelectbox div[data-baseweb="select"] {
+    background-color: #141720;
+    color: #ffffff;
+    border: 1px solid #303543;
+    border-radius: 10px;
+}
+
+.stTextInput input:focus,
+.stTextArea textarea:focus {
+    border-color: #f3263d;
+    box-shadow: 0 0 0 1px #f3263d;
+}
+
+.stButton > button {
+    background: linear-gradient(110deg, #ff243b, #c90024);
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    min-height: 48px;
+    font-weight: 700;
+    width: 100%;
+}
+
+.stButton > button:hover {
+    background: linear-gradient(110deg, #ff4659, #e5002b);
+    box-shadow: 0 0 22px rgba(255, 36, 59, 0.22);
     color: white;
 }
-.stButton > button {
-    background-color: #e32636;
-    color: white;
-    border-radius: 8px;
-    width: 100%;
+
+hr {
+    border-color: #292d38;
+}
+
+.stAlert {
+    border-radius: 12px;
+}
+
+[data-testid="stCaptionContainer"] {
+    color: #9299aa;
+}
+
+section[data-testid="stSidebar"] {
+    background-color: #0d0f14;
+    border-right: 1px solid #262a34;
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 st.title("LUMUS AI")
 st.caption("Marketing inteligente para marcas que querem crescer.")
