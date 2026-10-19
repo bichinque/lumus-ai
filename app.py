@@ -1,4 +1,3 @@
-
 import streamlit as st
 from google import genai
 from datetime import datetime
@@ -46,6 +45,9 @@ if "briefing_salvo" not in st.session_state:
 
 if "limpar_formulario" not in st.session_state:
     st.session_state.limpar_formulario = False
+
+if "mensagens_chat" not in st.session_state:
+    st.session_state.mensagens_chat = []
 
 # ==========================================
 # FUNÇÕES
@@ -115,6 +117,41 @@ def adicionar_historico(tipo, cliente, segmento, objetivo, tom, conteudo):
         "tom": tom,
         "conteudo": conteudo
     })
+
+
+def responder_chat(mensagens):
+    """Gera uma resposta usando o histórico atual da conversa como contexto."""
+    chave = st.secrets["GEMINI_API_KEY"]
+    client = genai.Client(api_key=chave)
+
+    instrucoes = """
+Você é a Lumus AI, assistente de marketing da Lumus Marketing.
+Converse em português brasileiro, de forma natural, clara, profissional e humana.
+Ajude com estratégia de marketing, legendas, roteiros de Reels, Stories,
+calendários editoriais, campanhas, propostas comerciais e prospecção.
+Leve em conta todo o histórico da conversa abaixo.
+Quando a pessoa pedir uma alteração, revise o conteúdo anterior conforme solicitado,
+sem começar do zero desnecessariamente.
+Não invente preços, datas, descontos, resultados ou informações de empresas.
+Se faltarem informações essenciais, faça uma pergunta objetiva.
+Entregue textos prontos para uso quando isso for solicitado.
+Não explique seu processo interno.
+"""
+
+    transcript = []
+    for mensagem in mensagens:
+        papel = "CLIENTE" if mensagem["role"] == "user" else "LUMUS AI"
+        transcript.append(f"{papel}: {mensagem['content']}")
+
+    prompt = instrucoes + "\n\nHISTÓRICO DA CONVERSA:\n" + "\n\n".join(transcript)
+    resposta = client.models.generate_content(
+        model="gemini-3.8-flash",
+        contents=prompt
+    )
+
+    if not resposta.text:
+        raise ValueError("A IA não retornou texto. Tente novamente.")
+    return resposta.text
 
 
 # ==========================================
@@ -294,6 +331,7 @@ with st.sidebar:
         "Navegação",
         [
             "Criar conteúdo",
+            "Chat com a Lumus AI",
             "Histórico",
             "Sobre a Lumus AI"
         ],
@@ -322,7 +360,7 @@ with st.sidebar:
     )
 
     st.markdown(
-        '<div class="muted">LUMUS AI · VERSÃO 2.1</div>',
+        '<div class="muted">LUMUS AI · VERSÃO 3.0</div>',
         unsafe_allow_html=True
     )
 
@@ -536,6 +574,90 @@ if st.session_state.pagina == "Criar conteúdo":
 
 
 # ==========================================
+# PÁGINA: CHAT INTERATIVO
+# ==========================================
+
+elif st.session_state.pagina == "Chat com a Lumus AI":
+
+    st.markdown(
+        '<div class="eyebrow">ESTÚDIO CRIATIVO CONVERSACIONAL</div>',
+        unsafe_allow_html=True
+    )
+    st.title("Converse com a Lumus AI")
+    st.caption(
+        "Peça um conteúdo, solicite alterações e continue a conversa "
+        "sem precisar começar novamente."
+    )
+
+    col_intro, col_novo = st.columns([4, 1])
+    with col_intro:
+        st.info(
+            "Exemplo: “Crie uma legenda para uma loja de motos”. "
+            "Depois, você pode dizer “deixe mais curta” ou "
+            "“faça uma segunda versão sem emojis”."
+        )
+    with col_novo:
+        if st.button("＋ Nova conversa", use_container_width=True):
+            st.session_state.mensagens_chat = []
+            st.rerun()
+
+    if not st.session_state.mensagens_chat:
+        with st.container(border=True):
+            st.subheader("O que vamos criar hoje?")
+            st.write(
+                "Você pode pedir legendas, roteiros, ideias de campanhas, "
+                "mensagens comerciais, calendários de conteúdo ou qualquer "
+                "outra tarefa relacionada a marketing."
+            )
+
+    for mensagem in st.session_state.mensagens_chat:
+        with st.chat_message(mensagem["role"]):
+            st.markdown(mensagem["content"])
+
+    pedido_chat = st.chat_input(
+        "Escreva seu pedido ou diga o que deseja alterar..."
+    )
+
+    if pedido_chat:
+        st.session_state.mensagens_chat.append({
+            "role": "user",
+            "content": pedido_chat
+        })
+
+        with st.chat_message("user"):
+            st.markdown(pedido_chat)
+
+        with st.chat_message("assistant"):
+            try:
+                with st.spinner("A Lumus AI está pensando..."):
+                    resposta_chat = responder_chat(
+                        st.session_state.mensagens_chat
+                    )
+                st.markdown(resposta_chat)
+                st.session_state.mensagens_chat.append({
+                    "role": "assistant",
+                    "content": resposta_chat
+                })
+
+                # Registra a conversa no histórico de criações.
+                adicionar_historico(
+                    "Conversa com a Lumus AI",
+                    "",
+                    "Marketing",
+                    pedido_chat,
+                    "Conversacional",
+                    resposta_chat
+                )
+            except Exception as erro:
+                # Remove o pedido não respondido para permitir nova tentativa.
+                st.session_state.mensagens_chat.pop()
+                st.error(
+                    f"Não foi possível responder: {erro}. "
+                    "Confira a configuração da chave GEMINI_API_KEY e tente novamente."
+                )
+
+
+# ==========================================
 # PÁGINA: HISTÓRICO
 # ==========================================
 
@@ -638,13 +760,15 @@ de comunicação dos clientes.
 - Propostas comerciais
 - Mensagens de prospecção
 - Textos em espanhol
+- Chat interativo com contexto da conversa
+- Revisão e alteração de conteúdos por mensagens
 
 ### Como utilizar
 
-1. Escolha o tipo de conteúdo.
-2. Informe o cliente e o objetivo.
-3. Selecione o tom de comunicação.
-4. Gere, revise, copie ou baixe o resultado.
+1. Escolha “Criar conteúdo” para usar o briefing guiado.
+2. Ou abra “Chat com a Lumus AI” para conversar livremente.
+3. Peça alterações e novas versões na mesma conversa.
+4. Revise, copie ou baixe o resultado.
 
 ### Importante
 
